@@ -1,7 +1,7 @@
 import app from "./app";
 import { sequelize } from "./db";
 
-const PORT = process.env.PORT || 3000;
+const PORT = Number(process.env.PORT) || 3000;
 
 (async () => {
   try {
@@ -10,7 +10,7 @@ const PORT = process.env.PORT || 3000;
     console.log("DB connected");
 
     // Запускаем сервер
-    app.listen(PORT, () => {
+    app.listen(PORT, "0.0.0.0", () => {
       console.log(`Server started on port ${PORT}`);
     });
   } catch (err) {
