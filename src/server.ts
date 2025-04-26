@@ -3,19 +3,22 @@ import { sequelize } from "./db";
 
 const PORT = Number(process.env.PORT) || 3000;
 
-async function startServer() {
+(async () => {
   try {
+    console.log("Connecting to DB...");
     await sequelize.authenticate();
-    await sequelize.sync();
     console.log("DB connected");
 
+    console.log("Syncing models with DB...");
+    await sequelize.sync(); // Автоматическая синхронизация моделей с базой данных
+    console.log("Models synced");
+
+    // Запускаем сервер
+    console.log(`Starting server on port ${PORT}...`);
     app.listen(PORT, "0.0.0.0", () => {
       console.log(`Server started on port ${PORT}`);
     });
   } catch (err) {
     console.error("Failed to start server:", err);
-    process.exit(1); // <-- если ошибка, выходим с ошибкой
   }
-}
-
-startServer();
+})();
