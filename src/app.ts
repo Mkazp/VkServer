@@ -13,6 +13,10 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+app.get("/", (req, res) => {
+  res.send("Сервер работает");
+});
+
 app.use("/api/users", userRoutes);
 app.use("/api/lots", lotRoutes);
 app.use("/api/bids", bidRoutes);
