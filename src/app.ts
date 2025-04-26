@@ -10,7 +10,13 @@ import "./models";
 
 const app = express();
 
-app.use(cors());
+// Настроим CORS:
+app.use(
+  cors({
+    origin: "*", // Разрешить запросы с любых доменов
+    credentials: true, // Разрешить отправку куки/заголовков авторизации
+  })
+);
 app.use(express.json());
 
 app.get("/", (req, res) => {
