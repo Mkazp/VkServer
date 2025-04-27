@@ -16,7 +16,7 @@ router.post("/", createLot);
 router.get("/", getAllLots);
 router.get("/:id", getLotById);
 router.put("/:id", updateLot);
-router.post("/:id/bids", createBid);
+router.post("/:id", createBid);
 // router.put("/:id", updateLotAfterBid);
 router.delete("/:id", deleteLot);
 

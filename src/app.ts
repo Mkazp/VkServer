@@ -25,6 +25,6 @@ app.get("/", (req, res) => {
 
 app.use("/api/users", userRoutes);
 app.use("/api/lots", lotRoutes);
-// app.use("/api/bids", bidRoutes);
+app.use("/api/bids", bidRoutes);
 
 export default app;
