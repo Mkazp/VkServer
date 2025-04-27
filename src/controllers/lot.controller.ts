@@ -108,6 +108,8 @@ export const updateLot = async (req: Request, res: Response): Promise<void> => {
     endsAt,
     ownerContact,
     ownerId,
+    currentBid,
+    winnerId,
   } = req.body;
 
   const transaction = await sequelize.transaction();
@@ -139,6 +141,8 @@ export const updateLot = async (req: Request, res: Response): Promise<void> => {
       images,
       endsAt,
       ownerContact,
+      currentBid,
+      winnerId,
     });
 
     await lot.save({ transaction });
