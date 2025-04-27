@@ -172,10 +172,9 @@ export const updateLot = async (req: Request, res: Response): Promise<void> => {
     userAvatar,
     amount, // сумма новой ставки
   } = req.body;
-
-  const transaction = await sequelize.transaction();
+  console.log(req.body);
   try {
-    const lot = await Lot.findByPk(id, { transaction });
+    const lot = await Lot.findByPk(id);
 
     if (!lot) {
       res.status(404).json({ error: "Лот не найден" });
@@ -197,29 +196,24 @@ export const updateLot = async (req: Request, res: Response): Promise<void> => {
     lot.currentBid = currentBid ?? lot.currentBid;
     lot.winnerId = winnerId ?? lot.winnerId;
 
-    await lot.save({ transaction });
+    await lot.save();
 
     // Создаем новую ставку
     if (userId && amount) {
-      await Bid.create(
-        {
-          id: uuidv4(),
-          lotId: lot.id,
-          userId,
-          userName,
-          userAvatar,
-          amount,
-          time: new Date().toISOString(),
-        },
-        { transaction }
-      );
+      await Bid.create({
+        id: uuidv4(),
+        lotId: lot.id,
+        userId,
+        userName,
+        userAvatar,
+        amount,
+        time: new Date().toISOString(),
+      });
     }
 
-    await transaction.commit();
     res.status(200).json({ message: "Лот успешно обновлен", lot });
   } catch (error) {
     console.error("Ошибка при обновлении лота:", error);
-    await transaction.rollback();
     res.status(500).json({ error: "Ошибка при обновлении лота" });
   }
 };
