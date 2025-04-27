@@ -125,24 +125,21 @@ export const updateLot = async (req: Request, res: Response): Promise<void> => {
     }
 
     // Обновляем информацию о лоте
-    Object.assign(
-      lot,
-      {
-        title,
-        description,
-        startPrice,
-        images,
-        endsAt,
-        ownerContact,
-      },
-      { transaction }
-    );
+    Object.assign(lot, {
+      title,
+      description,
+      startPrice,
+      images,
+      endsAt,
+      ownerContact,
+    });
 
-    await lot.save();
+    await lot.save({ transaction });
     await transaction.commit();
-    await res.status(200).json(lot);
+    res.status(200).json(lot);
   } catch (error) {
     console.error(error);
+    await transaction.rollback();
     res.status(500).json({ error: "Ошибка при обновлении лота" });
   }
 };
