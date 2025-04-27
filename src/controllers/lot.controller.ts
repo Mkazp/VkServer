@@ -229,50 +229,50 @@ export const updateLot = async (req: Request, res: Response): Promise<void> => {
   }
 };
 
-export const createBid = async (req: Request, res: Response): Promise<void> => {
-  const { id } = req.params; // id лота
-  const { userId, userName, userAvatar, amount } = req.body;
+// export const createBid = async (req: Request, res: Response): Promise<void> => {
+//   const { id } = req.params; // id лота
+//   const { userId, userName, userAvatar, amount } = req.body;
 
-  const transaction = await sequelize.transaction();
-  try {
-    const lot = await Lot.findByPk(id);
+//   const transaction = await sequelize.transaction();
+//   try {
+//     const lot = await Lot.findByPk(id);
 
-    if (!lot) {
-      res.status(404).json({ error: "Лот не найден" });
-      return;
-    }
+//     if (!lot) {
+//       res.status(404).json({ error: "Лот не найден" });
+//       return;
+//     }
 
-    if (lot.isFinished) {
-      res.status(400).json({ error: "Аукцион завершен" });
-      return;
-    }
+//     if (lot.isFinished) {
+//       res.status(400).json({ error: "Аукцион завершен" });
+//       return;
+//     }
 
-    // Создаём новую ставку
-    await Bid.create(
-      {
-        lotId: id,
-        userId,
-        userName,
-        userAvatar,
-        amount,
-        time: new Date().toISOString(),
-      },
-      { transaction }
-    );
+//     // Создаём новую ставку
+//     await Bid.create(
+//       {
+//         lotId: id,
+//         userId,
+//         userName,
+//         userAvatar,
+//         amount,
+//         time: new Date().toISOString(),
+//       },
+//       { transaction }
+//     );
 
-    // Обновляем текущую ставку и победителя в лоте
-    lot.currentBid = amount;
-    lot.winnerId = userId;
-    await lot.save({ transaction });
+//     // Обновляем текущую ставку и победителя в лоте
+//     lot.currentBid = amount;
+//     lot.winnerId = userId;
+//     await lot.save({ transaction });
 
-    await transaction.commit();
-    res.status(201).json({ message: "Ставка создана и лот обновлён" });
-  } catch (error) {
-    console.error(error);
-    await transaction.rollback();
-    res.status(500).json({ error: "Ошибка при создании ставки" });
-  }
-};
+//     await transaction.commit();
+//     res.status(201).json({ message: "Ставка создана и лот обновлён" });
+//   } catch (error) {
+//     console.error(error);
+//     await transaction.rollback();
+//     res.status(500).json({ error: "Ошибка при создании ставки" });
+//   }
+// };
 
 // ✨ Внесли изменения сюда:
 export const updateLotAfterBid = async (
