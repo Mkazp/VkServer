@@ -3,6 +3,7 @@ import { Lot } from "../models/Lot";
 import { Bid } from "../models/Bid";
 import { User } from "../models/User";
 import { v4 as uuidv4 } from "uuid";
+import { sequelize } from "../models";
 
 // Создание нового лота
 export const createLot = async (req: Request, res: Response): Promise<void> => {
@@ -24,7 +25,6 @@ export const createLot = async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
-    // Создаем новый лот без поля bids
     const newLot = await Lot.create({
       id: uuidv4(),
       title,
@@ -46,7 +46,7 @@ export const createLot = async (req: Request, res: Response): Promise<void> => {
   }
 };
 
-// Получение всех лотов с их ставками
+// Получение всех лотов
 export const getAllLots = async (
   req: Request,
   res: Response
@@ -56,7 +56,7 @@ export const getAllLots = async (
       include: [
         {
           model: Bid,
-          as: "bids", // Подключаем ставки через ассоциацию
+          as: "bids",
         },
       ],
     });
@@ -67,7 +67,7 @@ export const getAllLots = async (
   }
 };
 
-// Получение лота по ID с его ставками
+// Получение одного лота
 export const getLotById = async (
   req: Request,
   res: Response
@@ -79,7 +79,7 @@ export const getLotById = async (
       include: [
         {
           model: Bid,
-          as: "bids", // Подключаем ставки через ассоциацию
+          as: "bids",
         },
       ],
     });
@@ -122,7 +122,6 @@ export const updateLot = async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
-    // Обновляем только атрибуты лота
     Object.assign(lot, {
       title,
       description,
@@ -140,26 +139,50 @@ export const updateLot = async (req: Request, res: Response): Promise<void> => {
   }
 };
 
+// ✨ Внесли изменения сюда:
 export const updateLotAfterBid = async (req: Request, res: Response) => {
   const { id } = req.params;
-  const { currentBid, winnerId, endsAt } = req.body;
+  const { currentBid, winnerId, newBid } = req.body;
+
+  const transaction = await sequelize.transaction();
 
   try {
-    const lot = await Lot.findByPk(id);
+    const lot = await Lot.findByPk(id, { transaction });
 
     if (!lot) {
+      await transaction.rollback();
       res.status(404).json({ error: "Лот не найден" });
       return;
     }
 
+    // 1. Создаем новую ставку
+    await Bid.create(
+      {
+        id: uuidv4(),
+        lotId: id,
+        userId: newBid.userId,
+        amount: newBid.amount,
+        time: newBid.time,
+        userName: newBid.userName,
+        userAvatar: newBid.userAvatar,
+      },
+      { transaction }
+    );
+
+    // 2. Обновляем лот
     lot.currentBid = currentBid;
     lot.winnerId = winnerId;
-    lot.endsAt = endsAt;
 
-    await lot.save();
+    await lot.save({ transaction });
+
+    // 3. Всё прошло успешно — коммитим
+    await transaction.commit();
+
     res.status(200).json(lot);
   } catch (error) {
     console.error("Ошибка при обновлении лота после ставки:", error);
+
+    await transaction.rollback();
     res.status(500).json({ error: "Ошибка при обновлении лота после ставки" });
   }
 };
