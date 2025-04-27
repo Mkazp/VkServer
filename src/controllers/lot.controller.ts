@@ -165,9 +165,9 @@ export const updateLot = async (req: Request, res: Response): Promise<void> => {
     endsAt,
     ownerContact,
     ownerId,
-    currentBid,
+    currentBid, // Новое значение для текущей ставки
     winnerId,
-    bids, // сюда в теле запроса можно передать список ставок
+    bids, // Список ставок
   } = req.body;
 
   const transaction = await sequelize.transaction();
@@ -186,7 +186,7 @@ export const updateLot = async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
-    // Обновляем поля лота
+    // Обновляем основные поля лота
     Object.assign(lot, {
       title,
       description,
@@ -194,30 +194,40 @@ export const updateLot = async (req: Request, res: Response): Promise<void> => {
       images,
       endsAt,
       ownerContact,
-      currentBid,
       winnerId,
     });
+
+    // Если передано новое значение текущей ставки, обновляем его
+    if (currentBid !== undefined) {
+      lot.currentBid = currentBid;
+    }
+
     await lot.save({ transaction });
 
     // Если нужно обновить ставки
     if (bids && Array.isArray(bids)) {
-      // например, сначала удалить все старые ставки
+      // Удаляем старые ставки
       await Bid.destroy({ where: { lotId: lot.id }, transaction });
 
-      // и создать новые
+      // Сохраняем новые ставки
       for (const bidData of bids) {
         await Bid.create(
           {
             amount: bidData.amount,
-            userId: bidData.userId, // исправляем с bidderId на userId
+            userId: bidData.userId,
             lotId: lot.id,
-            userName: bidData.userName, // если нужен
-            userAvatar: bidData.userAvatar, // если нужен
-            time: new Date().toISOString(), // лучше явно указать время
+            userName: bidData.userName,
+            userAvatar: bidData.userAvatar,
+            time: new Date().toISOString(),
           },
           { transaction }
         );
       }
+
+      // Обновляем currentBid с самой высокой ставкой, если она есть
+      const maxBid = Math.max(...bids.map((bid) => bid.amount));
+      lot.currentBid = maxBid;
+      await lot.save({ transaction });
     }
 
     await transaction.commit();
