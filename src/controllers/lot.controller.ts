@@ -118,10 +118,10 @@ export const updateLot = async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
-    // if (ownerId !== lot.ownerId) {
-    //   res.status(403).json({ error: "Нет доступа к обновлению этого лота" });
-    //   return;
-    // }
+    if (ownerId !== lot.ownerId) {
+      res.status(403).json({ error: "Нет доступа к обновлению этого лота" });
+      return;
+    }
 
     // Обновляем информацию о лоте
     Object.assign(lot, {
