@@ -112,7 +112,14 @@ export const updateLot = async (req: Request, res: Response): Promise<void> => {
 
   const transaction = await sequelize.transaction();
   try {
-    const lot = await Lot.findByPk(id);
+    const lot = await Lot.findByPk(id, {
+      include: [
+        {
+          model: Bid,
+          as: "bids", // важно чтобы совпадало с ассоциацией!
+        },
+      ],
+    });
 
     if (!lot) {
       res.status(404).json({ error: "Лот не найден" });
