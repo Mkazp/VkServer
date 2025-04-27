@@ -140,6 +140,30 @@ export const updateLot = async (req: Request, res: Response): Promise<void> => {
   }
 };
 
+export const updateLotAfterBid = async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const { currentBid, winnerId, endsAt } = req.body;
+
+  try {
+    const lot = await Lot.findByPk(id);
+
+    if (!lot) {
+      res.status(404).json({ error: "Лот не найден" });
+      return;
+    }
+
+    lot.currentBid = currentBid;
+    lot.winnerId = winnerId;
+    lot.endsAt = endsAt;
+
+    await lot.save();
+    res.status(200).json(lot);
+  } catch (error) {
+    console.error("Ошибка при обновлении лота после ставки:", error);
+    res.status(500).json({ error: "Ошибка при обновлении лота после ставки" });
+  }
+};
+
 // Удаление лота
 export const deleteLot = async (req: Request, res: Response): Promise<void> => {
   const { id } = req.params;
