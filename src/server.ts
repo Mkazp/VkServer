@@ -6,7 +6,14 @@ const PORT = Number(process.env.PORT) || 3000;
 (async () => {
   try {
     console.log("Connecting to DB...");
-    await sequelize.authenticate();
+    sequelize
+      .authenticate()
+      .then(() => {
+        console.log("DB connectedввв");
+      })
+      .catch((error) => {
+        console.error("DB connection error:", error);
+      });
     console.log("DB connected");
 
     console.log("Syncing models with DB...");
@@ -14,7 +21,7 @@ const PORT = Number(process.env.PORT) || 3000;
     console.log("Models synced");
 
     // Запускаем сервер
-    console.log(`Starting server on port ${PORT}...`);
+    console.log(`Starting server on portе ${PORT}...`);
     app.listen(PORT, "0.0.0.0", () => {
       console.log(`Server started on port ${PORT}`);
     });

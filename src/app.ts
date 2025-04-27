@@ -1,3 +1,4 @@
+console.log("SERVER IS STARTING");
 import express from "express";
 import userRoutes from "./routes/user.routes";
 import lotRoutes from "./routes/lot.routes";
@@ -18,9 +19,13 @@ app.use(
   })
 );
 app.use(express.json());
-
+console.log("log app");
 app.get("/", (req, res) => {
   res.send("Сервер работает");
+});
+app.use((req, res, next) => {
+  console.log("===> Новый запрос:", req.method, req.originalUrl);
+  next();
 });
 
 app.use("/api/users", userRoutes);

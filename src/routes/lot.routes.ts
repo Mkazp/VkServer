@@ -1,11 +1,11 @@
 // routes/lot.routes.ts
+console.log("rout");
 import express from "express";
 import {
   createLot,
   getAllLots,
   getLotById,
   updateLot,
-  updateLotAfterBid,
   deleteLot,
 } from "../controllers/lot.controller";
 
