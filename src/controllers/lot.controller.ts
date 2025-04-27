@@ -118,10 +118,10 @@ export const updateLot = async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
-    // if (ownerId !== lot.ownerId) {
-    //   res.status(403).json({ error: "Нет доступа к обновлению этого лота" });
-    //   return;
-    // }
+    if (ownerId !== lot.ownerId) {
+      res.status(403).json({ error: "Нет доступа к обновлению этого лота" });
+      return;
+    }
 
     // Обновляем информацию о лоте
     Object.assign(lot, {
@@ -142,13 +142,12 @@ export const updateLot = async (req: Request, res: Response): Promise<void> => {
 };
 
 // ✨ Внесли изменения сюда:
-// Обновление лота после ставки
 export const updateLotAfterBid = async (
   req: Request,
   res: Response
 ): Promise<void> => {
   const { id } = req.params;
-  const { currentBid, winnerId, newBid } = req.body;
+  const { currentBid, newBid } = req.body; // Убираем winnerId
 
   console.log(`Попытка обновить лот с ID: ${id}`); // Логируем ID лота
 
@@ -161,8 +160,8 @@ export const updateLotAfterBid = async (
     if (!lot) {
       console.log(`Лот с ID ${id} не найден`); // Логируем, что лот не найден
       await transaction.rollback();
-      res.status(404).json({ error: "Лот не найден" }); // Убираем return
-      return; // Здесь можно оставить return, так как дальнейший код не нужен
+      res.status(404).json({ error: "Лот не найден" });
+      return;
     }
 
     console.log(`Лот с ID ${id} найден, выполняем обновление`); // Логируем, что лот найден
@@ -181,16 +180,15 @@ export const updateLotAfterBid = async (
       { transaction }
     );
 
-    // 2. Обновляем лот
-    lot.currentBid = currentBid;
-    lot.winnerId = winnerId;
+    // 2. Обновляем лот (только текущую ставку)
+    lot.currentBid = currentBid; // Обновляем только текущую ставку
 
     await lot.save({ transaction });
 
     // 3. Всё прошло успешно — коммитим
     await transaction.commit();
 
-    res.status(200).json(lot);
+    res.status(200).json(lot); // Отправляем обновленный лот
   } catch (error) {
     console.error("Ошибка при обновлении лота после ставки:", error);
 
