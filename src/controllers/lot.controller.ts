@@ -159,7 +159,7 @@ export const updateLotAfterBid = async (
 
     if (!lot) {
       console.log(`Лот с ID ${id} не найден`); // Логируем, что лот не найден
-      await transaction.rollback();
+      // await transaction.rollback();
       res.status(404).json({ error: "Лот не найден" });
       return;
     }
@@ -192,7 +192,7 @@ export const updateLotAfterBid = async (
   } catch (error) {
     console.error("Ошибка при обновлении лота после ставки:", error);
 
-    await transaction.rollback();
+    // await transaction.rollback();
     res.status(500).json({ error: "Ошибка при обновлении лота после ставки" });
   }
 };
