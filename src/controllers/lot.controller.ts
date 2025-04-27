@@ -151,21 +151,20 @@ export const updateLotAfterBid = async (
 
   console.log(`Попытка обновить лот с ID: ${id}`); // Логируем ID лота
 
-  // const transaction = await sequelize.transaction();
+  const transaction = await sequelize.transaction();
 
   try {
     // Ищем лот по ID
-    const lot = await Lot.findByPk(id);
+    const lot = await Lot.findByPk(id, { transaction });
 
-    console.log(`Лот с ID ${id} найден, выполняем обновление`);
     if (!lot) {
       console.log(`Лот с ID ${id} не найден`); // Логируем, что лот не найден
-      // await transaction.rollback();
+      await transaction.rollback();
       res.status(404).json({ error: "Лот не найден" });
       return;
     }
 
-    // Логируем, что лот найден
+    console.log(`Лот с ID ${id} найден, выполняем обновление`); // Логируем, что лот найден
 
     // 1. Создаем новую ставку
     await Bid.create(
@@ -177,24 +176,23 @@ export const updateLotAfterBid = async (
         time: newBid.time,
         userName: newBid.userName,
         userAvatar: newBid.userAvatar,
-      }
-      // ,
-      // { transaction }
+      },
+      { transaction }
     );
 
     // 2. Обновляем лот (только текущую ставку)
     lot.currentBid = currentBid; // Обновляем только текущую ставку
 
-    await lot.save();
+    await lot.save({ transaction });
 
     // 3. Всё прошло успешно — коммитим
-    // await transaction.commit();
+    await transaction.commit();
 
     res.status(200).json(lot); // Отправляем обновленный лот
   } catch (error) {
     console.error("Ошибка при обновлении лота после ставки:", error);
 
-    // await transaction.rollback();
+    await transaction.rollback();
     res.status(500).json({ error: "Ошибка при обновлении лота после ставки" });
   }
 };
