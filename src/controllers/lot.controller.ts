@@ -144,16 +144,21 @@ export const updateLotAfterBid = async (req: Request, res: Response) => {
   const { id } = req.params;
   const { currentBid, winnerId, newBid } = req.body;
 
+  console.log(`Попытка обновить лот с ID: ${id}`); // Логируем ID лота
+
   const transaction = await sequelize.transaction();
 
   try {
+    // Ищем лот по ID
     const lot = await Lot.findByPk(id, { transaction });
 
     if (!lot) {
+      console.log(`Лот с ID ${id} не найден`); // Логируем, что лот не найден
       await transaction.rollback();
-      res.status(404).json({ error: "Лот не найден" });
-      return;
+      return res.status(404).json({ error: "Лот не найден" });
     }
+
+    console.log(`Лот с ID ${id} найден, выполняем обновление`); // Логируем, что лот найден
 
     // 1. Создаем новую ставку
     await Bid.create(
