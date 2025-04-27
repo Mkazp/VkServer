@@ -165,16 +165,17 @@ export const updateLot = async (req: Request, res: Response): Promise<void> => {
     endsAt,
     ownerContact,
     ownerId,
-    currentBid, // Новое значение для текущей ставки
+    currentBid,
     winnerId,
-    bids, // Список ставок
+    userId,
+    userName,
+    userAvatar,
+    amount, // сумма новой ставки
   } = req.body;
 
   const transaction = await sequelize.transaction();
   try {
-    const lot = await Lot.findByPk(id, {
-      include: [{ model: Bid, as: "bids" }],
-    });
+    const lot = await Lot.findByPk(id, { transaction });
 
     if (!lot) {
       res.status(404).json({ error: "Лот не найден" });
@@ -186,54 +187,38 @@ export const updateLot = async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
-    // Обновляем основные поля лота
-    Object.assign(lot, {
-      title,
-      description,
-      startPrice,
-      images,
-      endsAt,
-      ownerContact,
-      winnerId,
-    });
-
-    // Если передано новое значение текущей ставки, обновляем его
-    if (currentBid !== undefined) {
-      lot.currentBid = currentBid;
-    }
+    // Обновляем поля лота
+    lot.title = title ?? lot.title;
+    lot.description = description ?? lot.description;
+    lot.startPrice = startPrice ?? lot.startPrice;
+    lot.images = images ?? lot.images;
+    lot.endsAt = endsAt ?? lot.endsAt;
+    lot.ownerContact = ownerContact ?? lot.ownerContact;
+    lot.currentBid = currentBid ?? lot.currentBid;
+    lot.winnerId = winnerId ?? lot.winnerId;
 
     await lot.save({ transaction });
 
-    // Если нужно обновить ставки
-    if (bids && Array.isArray(bids)) {
-      // Удаляем старые ставки
-      await Bid.destroy({ where: { lotId: lot.id }, transaction });
-
-      // Сохраняем новые ставки
-      for (const bidData of bids) {
-        await Bid.create(
-          {
-            amount: bidData.amount,
-            userId: bidData.userId,
-            lotId: lot.id,
-            userName: bidData.userName,
-            userAvatar: bidData.userAvatar,
-            time: new Date().toISOString(),
-          },
-          { transaction }
-        );
-      }
-
-      // Обновляем currentBid с самой высокой ставкой, если она есть
-      const maxBid = Math.max(...bids.map((bid) => bid.amount));
-      lot.currentBid = maxBid;
-      await lot.save({ transaction });
+    // Создаем новую ставку
+    if (userId && amount) {
+      await Bid.create(
+        {
+          id: uuidv4(),
+          lotId: lot.id,
+          userId,
+          userName,
+          userAvatar,
+          amount,
+          time: new Date().toISOString(),
+        },
+        { transaction }
+      );
     }
 
     await transaction.commit();
-    res.status(200).json(lot);
+    res.status(200).json({ message: "Лот успешно обновлен", lot });
   } catch (error) {
-    console.error(error);
+    console.error("Ошибка при обновлении лота:", error);
     await transaction.rollback();
     res.status(500).json({ error: "Ошибка при обновлении лота" });
   }
