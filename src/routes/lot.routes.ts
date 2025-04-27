@@ -15,7 +15,7 @@ router.post("/", createLot);
 router.get("/", getAllLots);
 router.get("/:id", getLotById);
 router.put("/:id", updateLot);
-router.patch("/:id/bid", updateLotAfterBid);
+router.patch("/:id", updateLotAfterBid);
 router.delete("/:id", deleteLot);
 
 export default router;
