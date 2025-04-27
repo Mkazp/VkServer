@@ -110,6 +110,7 @@ export const updateLot = async (req: Request, res: Response): Promise<void> => {
     ownerId,
   } = req.body;
 
+  const transaction = await sequelize.transaction();
   try {
     const lot = await Lot.findByPk(id);
 
@@ -124,17 +125,22 @@ export const updateLot = async (req: Request, res: Response): Promise<void> => {
     }
 
     // Обновляем информацию о лоте
-    Object.assign(lot, {
-      title,
-      description,
-      startPrice,
-      images,
-      endsAt,
-      ownerContact,
-    });
+    Object.assign(
+      lot,
+      {
+        title,
+        description,
+        startPrice,
+        images,
+        endsAt,
+        ownerContact,
+      },
+      { transaction }
+    );
 
     await lot.save();
-    res.status(200).json(lot);
+    await transaction.commit();
+    await res.status(200).json(lot);
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Ошибка при обновлении лота" });
