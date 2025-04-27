@@ -6,6 +6,7 @@ import {
   getLotById,
   updateLot,
   updateLotAfterBid,
+  createBid,
   deleteLot,
 } from "../controllers/lot.controller";
 
@@ -15,6 +16,7 @@ router.post("/", createLot);
 router.get("/", getAllLots);
 router.get("/:id", getLotById);
 router.put("/:id", updateLot);
+router.post("/lots/:id/bids", createBid);
 // router.put("/:id", updateLotAfterBid);
 router.delete("/:id", deleteLot);
 

@@ -98,6 +98,63 @@ export const getLotById = async (
 
 // Обновление лота
 // Обновление лота (для обычных изменений)
+// export const updateLot = async (req: Request, res: Response): Promise<void> => {
+//   const { id } = req.params;
+//   const {
+//     title,
+//     description,
+//     startPrice,
+//     images,
+//     endsAt,
+//     ownerContact,
+//     ownerId,
+//     currentBid,
+//     winnerId,
+//   } = req.body;
+
+//   const transaction = await sequelize.transaction();
+//   try {
+//     const lot = await Lot.findByPk(id, {
+//       include: [
+//         {
+//           model: Bid,
+//           as: "bids", // важно чтобы совпадало с ассоциацией!
+//         },
+//       ],
+//     });
+
+//     if (!lot) {
+//       res.status(404).json({ error: "Лот не найден" });
+//       return;
+//     }
+
+//     if (ownerId !== lot.ownerId) {
+//       res.status(403).json({ error: "Нет доступа к обновлению этого лота" });
+//       return;
+//     }
+
+//     // Обновляем информацию о лоте
+//     Object.assign(lot, {
+//       title,
+//       description,
+//       startPrice,
+//       images,
+//       endsAt,
+//       ownerContact,
+//       currentBid,
+//       winnerId,
+//     });
+
+//     await lot.save({ transaction });
+//     await transaction.commit();
+//     res.status(200).json(lot);
+//   } catch (error) {
+//     console.error(error);
+//     await transaction.rollback();
+//     res.status(500).json({ error: "Ошибка при обновлении лота" });
+//   }
+// };
+
 export const updateLot = async (req: Request, res: Response): Promise<void> => {
   const { id } = req.params;
   const {
@@ -110,17 +167,13 @@ export const updateLot = async (req: Request, res: Response): Promise<void> => {
     ownerId,
     currentBid,
     winnerId,
+    bids, // сюда в теле запроса можно передать список ставок
   } = req.body;
 
   const transaction = await sequelize.transaction();
   try {
     const lot = await Lot.findByPk(id, {
-      include: [
-        {
-          model: Bid,
-          as: "bids", // важно чтобы совпадало с ассоциацией!
-        },
-      ],
+      include: [{ model: Bid, as: "bids" }],
     });
 
     if (!lot) {
@@ -133,7 +186,7 @@ export const updateLot = async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
-    // Обновляем информацию о лоте
+    // Обновляем поля лота
     Object.assign(lot, {
       title,
       description,
@@ -144,14 +197,80 @@ export const updateLot = async (req: Request, res: Response): Promise<void> => {
       currentBid,
       winnerId,
     });
-
     await lot.save({ transaction });
+
+    // Если нужно обновить ставки
+    if (bids && Array.isArray(bids)) {
+      // например, сначала удалить все старые ставки
+      await Bid.destroy({ where: { lotId: lot.id }, transaction });
+
+      // и создать новые
+      for (const bidData of bids) {
+        await Bid.create(
+          {
+            amount: bidData.amount,
+            userId: bidData.userId, // исправляем с bidderId на userId
+            lotId: lot.id,
+            userName: bidData.userName, // если нужен
+            userAvatar: bidData.userAvatar, // если нужен
+            time: new Date().toISOString(), // лучше явно указать время
+          },
+          { transaction }
+        );
+      }
+    }
+
     await transaction.commit();
     res.status(200).json(lot);
   } catch (error) {
     console.error(error);
     await transaction.rollback();
     res.status(500).json({ error: "Ошибка при обновлении лота" });
+  }
+};
+
+export const createBid = async (req: Request, res: Response): Promise<void> => {
+  const { id } = req.params; // id лота
+  const { userId, userName, userAvatar, amount } = req.body;
+
+  const transaction = await sequelize.transaction();
+  try {
+    const lot = await Lot.findByPk(id);
+
+    if (!lot) {
+      res.status(404).json({ error: "Лот не найден" });
+      return;
+    }
+
+    if (lot.isFinished) {
+      res.status(400).json({ error: "Аукцион завершен" });
+      return;
+    }
+
+    // Создаём новую ставку
+    await Bid.create(
+      {
+        lotId: id,
+        userId,
+        userName,
+        userAvatar,
+        amount,
+        time: new Date().toISOString(),
+      },
+      { transaction }
+    );
+
+    // Обновляем текущую ставку и победителя в лоте
+    lot.currentBid = amount;
+    lot.winnerId = userId;
+    await lot.save({ transaction });
+
+    await transaction.commit();
+    res.status(201).json({ message: "Ставка создана и лот обновлён" });
+  } catch (error) {
+    console.error(error);
+    await transaction.rollback();
+    res.status(500).json({ error: "Ошибка при создании ставки" });
   }
 };
 
